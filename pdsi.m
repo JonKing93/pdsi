@@ -18,7 +18,7 @@ function[X, Xm, Z, PE, ro, W] = pdsi(T, P, years, lats, awcs, awcu, calibrationY
 %
 % T: Monthly temperature data (in Farenheit) for a collection of sites. A
 %    numeric array that cannot contain NaN, Inf, or complex values. Assumed
-%    progress from January to December in each included year.
+%    to progress from January to December in each included year.
 %
 % P: Monthly precipitation data (in inches) for a collection of sites. A 
 %    numeric array that cannot contain NaN, Inf, or complex values. Must 
@@ -59,9 +59,6 @@ function[X, Xm, Z, PE, ro, W] = pdsi(T, P, years, lats, awcs, awcu, calibrationY
 % ----- Written By -----
 % Original function by Dave Meko
 % Updated and vectorized by Jonathan King, 2020
-
-% !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-% When you add the SH, also make the starting month variable
 
 %% Setup
 

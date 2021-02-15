@@ -13,6 +13,9 @@ function[PE] = pethorn(T, years, lats, calib)
 % lats: Latitudes of the sites. A vector the length of the third dimension
 %    of T.
 %
+% calib: Indicates which years to use for the calibration period. A logical
+%    vector the length of years.
+%
 % ----- Outputs -----
 %
 % PE: Potential evapotranspiration in each month. (12 x years x sites)
@@ -41,6 +44,7 @@ S = interp1(Thot, PEhot, T(hot));
 [month, y, ~] = ind2sub(size(T), find(hot));
 daysPerMonth =[31 28 31 30 31 30 31 31 30 31 30 31]';
 S = S .* daysPerMonth(month);
+
 leap = month==2 & mod(years(y), 4)==0;
 S(leap) = S(leap) * (29/28);
 PE(hot) = S;
