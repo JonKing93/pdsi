@@ -1,5 +1,21 @@
 function[PE] = pethorn(T, years, lats, calib)
-% T: in C (12 x nYears x nSite)
+%% Calculates potential evapotranspiration using the Thornthwaite equation
+%
+% PE = pethorn(T, years, lats, calib)
+%
+% ----- Inputs -----
+%
+% T: Monthly temperatures in Celsius. (12 x years x sites)
+%
+% years: The years of the temperature data. A vector the length of the
+%    second dimension of T.
+%
+% lats: Latitudes of the sites. A vector the length of the third dimension
+%    of T.
+%
+% ----- Outputs -----
+%
+% PE: Potential evapotranspiration in each month. (12 x years x sites)
 
 % Get the monthly means for the calibration period
 Tmean = mean(T(:,calib,:), 2);
