@@ -1,6 +1,14 @@
 function[PEhot, Thot] = unadjustedPE
 %% Returns a table of unadjusted PE values (mm/day) for temperatures over
 % 26.5 C from Thornthwaite and Mather Table 5, page 226.
+%
+% [PE, T] = unadjustedPE
+%
+% ----- Outputs -----
+%
+% PE: A vector set of unadjusted PE values for hot temperatures
+%
+% T: The tempertaures corresponding to the PE values.
 
 Thot = 26:.1:38;
 PEhot = [...

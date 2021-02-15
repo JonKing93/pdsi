@@ -2,6 +2,16 @@ function[x, xm] = zPDSI(z)
 %% Calculates PDSI and modified PDSI from Z indices
 %
 % [x, xm] = zPDSI(Z)
+%
+% ----- Inputs -----
+%
+% Z: A set of monthly Z indices. (nMonths x nSites)
+%
+% ----- Outputs -----
+%
+% x: Palmer drought severity index for each month. (nMonths x nSites)
+%
+% xm: Modified Palmer drought severity index in each month. (nMonths x nSites)
 
 % Preallocate
 [nTime, nSite] = size(Z);
