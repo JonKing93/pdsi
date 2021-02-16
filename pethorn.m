@@ -31,7 +31,7 @@ a = 1E-6 * (0.675*I.^3 - 77.1*I.^2 + 17920*I + 492390);
 
 % Compute PE. Adjust for extrememly hot and below freezing temperatures
 T(T>38) = 38;
-PE = 16 * ((10 * T ./ I) .^ a);
+PE = 16 * (T .* (10./I)) .^ a;
 PE(T<=0) = 0;
 PE(:,:,I==0) = 0;
 

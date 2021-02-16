@@ -179,7 +179,7 @@ su = su(1:end-1,:);
 
 % Potential recharge, loss and runoff
 if type > 1
-    pro = -(ss + su);
+    pro = ss + su;
     pr = awc + pro;
     plosss = min(PE, ss);
     plossu = (PE - plosss) .* (su ./ awc);

@@ -14,7 +14,7 @@ function[x, xm] = zPDSI(z)
 % xm: Modified Palmer drought severity index in each month. (nMonths x nSites)
 
 % Preallocate
-[nTime, nSite] = size(Z);
+[nTime, nSite] = size(z);
 x1 = zeros(nTime, nSite);
 x2 = zeros(nTime, nSite);
 x3 = zeros(nTime, nSite);
@@ -36,12 +36,16 @@ x1(1,:) = max(0, z3(1,:));
 x2(1,:) = min(0, z3(1,:));
 x3(1,:) = z3(1,:);
 
+Vlast = zeros(1, nSite);
+lastProb = zeros(1, nSite);
+
 iswet = z3(1,:)>=1;
 isdry = z3(1,:)<=-1;
 isnormal = z3(1,:)>-1 & z3(1,:)<1;
 
 newPeriod(iswet | isdry) = true;
 x3(1, isnormal) = 0;
+useX12(1, isnormal) = true;
 
 % Integrate the PDSI model over time
 for t = 2:nTime
@@ -57,10 +61,9 @@ for t = 2:nTime
     isdry(:) = false;
     
     % Update the coefficients
-    positive = z3(t,:)>0;
-    x1(t, positive) = 0.897 * x1(t-1, positive) + z3(t, positive);
-    x2(t, positive) = 0.897 * x2(t-1, ~positive) + z3(t, ~positive);
-    x3(t, wet|dry) = 0.897 * x3(t-1, wet|dry) + z3(t, wet|dry);
+    x1(t, :) = max(0, 0.897 * x1(t-1,:) + z3(t,:));
+    x2(t, :) = min(0, 0.897 * x2(t-1,:) + z3(t,:));
+    x3(t, :) = 0.897 * x3(t-1,:) + z3(t,:);
     
     %% Normal month
     
@@ -68,6 +71,7 @@ for t = 2:nTime
     staynormal = normal & x1(t,:)<1 & x2(t,:)>-1;
     useX12(t, staynormal) = true;
     isnormal(staynormal) = true;
+    x3(t, staynormal) = 0;
     
     % Change to wet period
     nextwet = normal & x1(t,:)>=1;
@@ -92,7 +96,7 @@ for t = 2:nTime
     x1(t, newwet) = 0;
     newdry = dry & newPeriod;
     x2(t, newdry) = 0;
-    newPeriod(newPeriod) = false;
+    newPeriod(newwet | newdry) = false;
     
     %% Wet and dry subperiods
     
@@ -107,7 +111,7 @@ for t = 2:nTime
     nosub = ~inSubperiod & ((wet & effWet>=0) | (dry & effWet<=0));
     newsub = ~inSubperiod & ((wet & effWet<0) | (dry & effWet>0));
     oldsub = inSubperiod;
-    insub = newsub & oldsub;
+    insub = newsub | oldsub;
     
     % Get the probability that the period has ended
     probEnd(t, nosub) = 0;
@@ -119,8 +123,8 @@ for t = 2:nTime
     Q(oldsub) = Q(oldsub) + Vlast(oldsub);
     probEnd(t, insub) = V(insub) ./ Q(insub);
     
-    probEnd(t, probEnd<0) = 0;
-    probEnd(t, probEnd>100) = 1;
+    probEnd(t, probEnd(t,:)<0) = 0;
+    probEnd(t, probEnd(t,:)>1) = 1;
     
     % Update the subperiods
     inSubperiod(newsub) = true;
@@ -137,6 +141,9 @@ for t = 2:nTime
     isdry(fulldry) = true;
     x1(t, fullwet) = 0;
     x2(t, fulldry) = 0;
+    
+    x1(t, fulldry & subend) = 0;
+    x2(t, fullwet & subend) = 0;
     inSubperiod(subend) = false;
     V(subend) = 0;
     
@@ -145,7 +152,13 @@ for t = 2:nTime
     nextnormal = change & ((wet & x2(t,:)>-1) | (dry & x1(t,:)<1));
     isnormal(nextnormal) = true;
     x3(t, nextnormal) = 0;
-    useX12(t:-1:(t-nump(textnormal)), nextNormal) = true;
+    if any(nextnormal)
+        sites = find(nextnormal);
+        for k = 1:numel(sites)
+            s = sites(k);
+            useX12(t-nump(s):t, s) = true;
+        end
+    end
     
     % Change to opposite state
     flip = change & ((wet & x2(t,:)<=-1) | (dry & x1(t,:)>=1));
@@ -155,12 +168,24 @@ for t = 2:nTime
     nextdry = flip & wet;
     isdry(nextdry) = true;
     x3(t, nextdry) = x2(t, nextdry);
-    useX2(t:-1:(t-nump), nextdry) = true;
+    if any(nextdry)
+        sites = find(nextdry);
+        for k = 1:numel(sites)
+            s = sites(k);
+            useX2(t-nump(s):t, s) = true;
+        end
+    end
     
     nextwet = flip & dry;
     iswet(nextwet) = true;
     x3(t, nextwet) = x1(t, nextwet);
-    useX1(t:-1:(t-nump), nextwet) = true;
+    if any(nextwet)
+        sites = find(nextwet);
+        for k = 1:numel(sites)
+            s = sites(k);
+            useX1(t-nump(s):t, s) = true;
+        end
+    end
     
     % Persist in subperiod
     persist = (wet|dry) & ~full & ~change;
@@ -176,14 +201,19 @@ for t = 2:nTime
     
     % Save V for probability calculations in the next month
     Vlast = V;
+    lastProb = probEnd(t,:);
 end
 
 % Get the standard PDSI
 x = x3;
 x(useX1) = x1(useX1);
 x(useX2) = x2(useX2);
-x12 = max(abs(x1), abs(x2));
-x(useX12) = x12(useX12);
+
+maxwet = abs(x1) >= abs(x2);
+maxX1 = useX12 & maxwet;
+maxX2 = useX12 & ~maxwet;
+x(maxX1) = x1(maxX1);
+x(maxX2) = x2(maxX2);
 
 % Get the modified PDSI
 modify = probEnd>0 & probEnd<1;

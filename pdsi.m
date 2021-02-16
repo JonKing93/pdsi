@@ -1,4 +1,4 @@
-function[X, Xm, Z, PE, ro, W] = pdsi(T, P, years, lats, awcs, awcu, calibrationYears, dim)
+function[X, Xm, Z, PE] = pdsi(T, P, years, lats, awcs, awcu, calibrationYears, dim)
 %% Calculates PDSI
 %
 % [X, Xm] = pdsi(T, P, years, lats, awcs, awcu, calibrationYears)
@@ -10,9 +10,8 @@ function[X, Xm, Z, PE, ro, W] = pdsi(T, P, years, lats, awcs, awcu, calibrationY
 % Specify which dimension of the temperature and precipitation data is the
 % monthly time step. By default, pdsi treats the first dimension as time.
 %
-% [X, Xm, Z, PE, RO, W] = pdsi(...)
-% Also return the Z indices, potential evaportranspiration, runoff, and
-% soil moisture for each site.
+% [X, Xm, Z, PE] = pdsi(...)
+% Also return the Z indices and potential evaportranspiration.
 %
 % ----- Inputs -----
 %
@@ -62,6 +61,13 @@ function[X, Xm, Z, PE, ro, W] = pdsi(T, P, years, lats, awcs, awcu, calibrationY
 
 %% Setup
 
+% Error check dim and determine time dimension
+if ~exist('dim','var') || isempty(dim)
+    dim = 1;
+end
+assert(isscalar(dim), 'dim must be scalar');
+assert(mod(dim,1)==0 & dim>0, 'dim must be a positive integer');
+
 % Error check numeric data type
 args = {T, P, years, lats, awcs, awcu, calibrationYears, dim};
 names = {'T','P','years','lats','awcs','awcu','calibrationYears','dim'};
@@ -69,13 +75,6 @@ for k = 1:numel(args)
     assert(isnumeric(args{k}) & ~any(isnan(args{k}),'all') & ~any(isinf(args{k}),'all') & all(isreal(args{k}),'all'), ...
         sprintf('%s must be numeric and cannot contain NaN, Inf, or complex values', names{k}));
 end
-
-% Error check dim and determine time dimension
-if ~exist('dim','var') || isempty(dim)
-    dim = 1;
-end
-assert(isscalar(dim), 'dim must be scalar');
-assert(mod(dim,1)==0 & dim>0, 'dim must be a positive integer');
 
 % Error check sizes for data and years
 fullSize = size(T);
@@ -151,7 +150,9 @@ T = reshape(T, [12, nYears, nSite]);
 P = reshape(P, [12, nYears, nSite]);
 
 % Compute potential evapotranspiration via the Thornthwaite method
+tic
 PE = pethorn(T, years, lats, calib);
+toc
 
 % Get monthly means from the calibration period.
 Pcalib = P(:,calib,:);
@@ -208,7 +209,9 @@ delta(ploss==0) = 0;
 % Run the soil moisture model over the entire time period
 P = reshape(P, [nTime, nSite]);
 PE = reshape(PE, [nTime, nSite]);
+tic
 s = soilMoisture(P, PE, awcs, awcu, ssi, sui, 3);
+toc
 
 pr = reshape(s.pr, [12, nTime/12, nSite]);
 pro = reshape(s.pro, [12, nTime/12, nSite]);
@@ -218,15 +221,17 @@ ploss = reshape(s.ploss, [12, nTime/12, nSite]);
 P = reshape(P, [12, nYears, nSite]);
 PE = reshape(PE, [12, nYears, nSite]);
 
-% Get soil moisture for each month. Calculate effective precipitation
-warning('smean');
-% W = reshape(s.smean, [12, nYears]);
-
 % Calculate CAFEC precipitation, monthly departures, and monthly K' factors
 Pcafec = (alpha.*PE) + (beta.*pr) + (gamma.*pro) - (delta.*ploss);
-D = abs(P - Pcafec);
-Dmean = mean(D(:,calib,:), 2);
-Kprime = 1.5 * log10(((PEmean+r+ro)./(Pmean+loss) + 2.8) ./ Dmean) + 0.5;
+D = P - Pcafec;
+Dmean = mean( abs(D(:,calib,:)), 2);
+w = NaN(1,1,nSite);
+for k = 1:nSite
+    num = PEmean(:,:,k) + r(:,:,k) + ro(:,:,k);
+    denom = Pmean(:,:,k) + loss(:,:,k);
+    w(:,:,k) = (num' / denom') + 2.8;
+end
+Kprime = 1.5 * log10(w ./ Dmean) + 0.5;
 
 % Adjust the K' values and use to calculate Z indices
 denom = sum(Dmean .* Kprime, 1);
@@ -235,6 +240,8 @@ Z = K .* D;
 
 % Compute PDSI from Z indices
 Z = reshape(Z, [nTime, nSite]);
+tic
 [X, Xm] = zPDSI(Z);
+toc
 
 end
