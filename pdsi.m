@@ -150,9 +150,7 @@ T = reshape(T, [12, nYears, nSite]);
 P = reshape(P, [12, nYears, nSite]);
 
 % Compute potential evapotranspiration via the Thornthwaite method
-tic
 PE = pethorn(T, years, lats, calib);
-toc
 
 % Get monthly means from the calibration period.
 Pcalib = P(:,calib,:);
@@ -209,9 +207,7 @@ delta(ploss==0) = 0;
 % Run the soil moisture model over the entire time period
 P = reshape(P, [nTime, nSite]);
 PE = reshape(PE, [nTime, nSite]);
-tic
 s = soilMoisture(P, PE, awcs, awcu, ssi, sui, 3);
-toc
 
 pr = reshape(s.pr, [12, nTime/12, nSite]);
 pro = reshape(s.pro, [12, nTime/12, nSite]);
@@ -240,8 +236,6 @@ Z = K .* D;
 
 % Compute PDSI from Z indices
 Z = reshape(Z, [nTime, nSite]);
-tic
 [X, Xm] = zPDSI(Z);
-toc
 
 end
