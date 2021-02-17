@@ -1,17 +1,21 @@
-function[X, Xm, Z, PE] = pdsi(T, P, years, lats, awcs, awcu, calibrationYears, dim)
+function[X, Xm, Z, PE] = pdsi(T, P, years, lats, awcs, awcu, calibrationYears, dim, showprogress)
 %% Calculates PDSI
 %
 % [X, Xm] = pdsi(T, P, years, lats, awcs, awcu, calibrationYears)
 % Calculates the Palmer Drought Severity Index and modified Palmer Drought
 % Severity Index given monthly temperature and precipitation data from a
-% collection of sites. 
+% collection of sites.
+%
+% [X, Xm, Z, PE] = pdsi(...)
+% Also return the Z indices and potential evaportranspiration.
 %
 % [...] = pdsi(..., dim)
 % Specify which dimension of the temperature and precipitation data is the
 % monthly time step. By default, pdsi treats the first dimension as time.
 %
-% [X, Xm, Z, PE] = pdsi(...)
-% Also return the Z indices and potential evaportranspiration.
+% [...] = pdsi(..., dim, showprogress)
+% Specify whether to show a progress bar. By default, does not display a
+% progress bar.
 %
 % ----- Inputs -----
 %
@@ -41,6 +45,9 @@ function[X, Xm, Z, PE] = pdsi(T, P, years, lats, awcs, awcu, calibrationYears, d
 % calibrationYears: The first and last year of the calibration period. A
 %    two element vector.
 %
+% showprogress: A scalar logical indicating whether to display a progress
+%    bar (true) or not (false).
+%
 % ----- Outputs -----
 %
 % X: Palmer Drought Severity Index for each site over time.
@@ -50,16 +57,18 @@ function[X, Xm, Z, PE] = pdsi(T, P, years, lats, awcs, awcu, calibrationYears, d
 % Z: The Z indices used to calculate PDSI for each site over time.
 %
 % PE: The computed potential evapotranspiration for each site over time.
-%
-% RO: Computed runoff for each site over time.
-%
-% W: Computed soil moisture for each site over time.
 
 % ----- Written By -----
 % Original function by Dave Meko
 % Updated and vectorized by Jonathan King, 2020
 
 %% Setup
+
+% Error check and determine progress bar
+if ~exist('showprogress','var') || isempty(showprogress)
+    showprogress = false;
+end
+assert(isscalar(showprogress) && islogical(showprogress), 'showprogress must be a scalar logical');
 
 % Error check dim and determine time dimension
 if ~exist('dim','var') || isempty(dim)
@@ -207,7 +216,7 @@ delta(ploss==0) = 0;
 % Run the soil moisture model over the entire time period
 P = reshape(P, [nTime, nSite]);
 PE = reshape(PE, [nTime, nSite]);
-s = soilMoisture(P, PE, awcs, awcu, ssi, sui, 3);
+s = soilMoisture(P, PE, awcs, awcu, ssi, sui, 3, showprogress);
 
 pr = reshape(s.pr, [12, nTime/12, nSite]);
 pro = reshape(s.pro, [12, nTime/12, nSite]);
@@ -236,6 +245,6 @@ Z = K .* D;
 
 % Compute PDSI from Z indices
 Z = reshape(Z, [nTime, nSite]);
-[X, Xm] = zPDSI(Z);
+[X, Xm] = zPDSI(Z, showprogress);
 
 end

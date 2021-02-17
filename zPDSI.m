@@ -1,4 +1,4 @@
-function[x, xm] = zPDSI(z)
+function[x, xm] = zPDSI(z, showprogress)
 %% Calculates PDSI and modified PDSI from Z indices
 %
 % [x, xm] = zPDSI(Z)
@@ -7,11 +7,18 @@ function[x, xm] = zPDSI(z)
 %
 % Z: A set of monthly Z indices. (nMonths x nSites)
 %
+% showprogress: A scalar logical indicating whether to display a progress bar
+%
 % ----- Outputs -----
 %
 % x: Palmer drought severity index for each month. (nMonths x nSites)
 %
 % xm: Modified Palmer drought severity index in each month. (nMonths x nSites)
+
+% Default progressbar
+if ~exist('showprogress','var') || isempty(showprogress)
+    showprogress = false;
+end
 
 % Preallocate
 [nTime, nSite] = size(z);
@@ -46,6 +53,15 @@ isnormal = z3(1,:)>-1 & z3(1,:)<1;
 newPeriod(iswet | isdry) = true;
 x3(1, isnormal) = 0;
 useX12(1, isnormal) = true;
+
+% Optionally display progress bar
+if showprogress
+    percent = 0;
+    str = 'Integrating PDSI model: ';
+    message = sprintf('%s%.f%%', str, percent);
+    step = ceil(nTime/100);
+    f = waitbar(0, message);
+end
 
 % Integrate the PDSI model over time
 for t = 2:nTime
@@ -202,6 +218,16 @@ for t = 2:nTime
     % Save V for probability calculations in the next month
     Vlast = V;
     lastProb = probEnd(t,:);
+    
+    % Update the waitbar
+    if showprogress && (mod(t,step)==0 || t==nTime)
+        percent = 100 * t/nTime;
+        message = sprintf('%s%.f%%', str, percent);
+        waitbar(t/nTime, f, message);
+    end
+end
+if showprogress
+    close(f);
 end
 
 % Get the standard PDSI

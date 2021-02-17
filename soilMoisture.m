@@ -1,4 +1,4 @@
-function[s] = soilMoisture(P, PE, awcs, awcu, ssi, sui, type)
+function[s] = soilMoisture(P, PE, awcs, awcu, ssi, sui, type, showprogress)
 %% Calculates soil moisture
 %
 % s = soilMoisture(P, PE, awcs, awcu, ssi, sui, 1)
@@ -35,11 +35,15 @@ function[s] = soilMoisture(P, PE, awcs, awcu, ssi, sui, type)
 %    per site.
 %
 % type: Switch for the outputs required
+%    1 - Only need soil moisture in the final year
+%    2 - Need terms for CAFEC coefficients
+%    3 - Need pro, pr, and ploss for Z indices
+%
+% showprogress: A scalar logical indicating whether to show a progress bar
 %
 % ----- Outputs -----
 %
 % s: An output structure. All fields are (nMonths x nSite)
-%    smean: Mean soil moisture, combined layers
 %    r: Recharge, combined layers
 %    pr: Potential recharge
 %    ro: Runoff
@@ -53,6 +57,11 @@ function[s] = soilMoisture(P, PE, awcs, awcu, ssi, sui, type)
 % ----- Written By -----
 % Original script by Dave Meko.
 % Updated and vectorized by Jonathan King, 2020.
+
+% Default progressbar
+if ~exist('showprogress','var') || isempty(showprogress)
+    showprogress = false;
+end
 
 % Error check data types of inputs
 args = {P, PE, awcs, awcu, ssi, sui};
@@ -114,6 +123,15 @@ end
 ss(1,:) = ssi;
 su(1,:) = sui;
 
+% Optionally display progress bar
+if showprogress
+    percent = 0;
+    str = 'Running soil moisture model: ';
+    message = sprintf('%s%.f%%', str, percent);
+    step = ceil(nMonths/100);
+    f = waitbar(0, message);
+end
+
 % Run the moisture model over each month. Start by getting the empty
 % capacity in each time step
 for m = 1:nMonths
@@ -165,7 +183,17 @@ for m = 1:nMonths
     end
     if type > 1
         ro(m,:) = ro_m;
-    end    
+    end
+    
+    % Update the waitbar
+    if showprogress && (mod(m,step)==0 || m==nMonths)
+        percent = 100 * m/nMonths;
+        message = sprintf('%s%.f%%', str, percent);
+        waitbar(m/nMonths, f, message);
+    end
+end
+if showprogress
+    close(f);
 end
 
 % Evapotranspiration
