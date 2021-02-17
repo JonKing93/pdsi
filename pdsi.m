@@ -247,4 +247,20 @@ Z = K .* D;
 Z = reshape(Z, [nTime, nSite]);
 [X, Xm] = zPDSI(Z, showprogress);
 
+% Reshape to match size of input grids
+X = reshape(X, fullSize);
+X = permute(X, order);
+if nargout > 1
+    Xm = reshape(Xm, fullSize);
+    Xm = permute(Xm, order);
+end
+if nargout > 2
+    Z = reshape(Z, fullSize);
+    Z = permute(Z, order);
+end
+if nargout > 3
+    PE = reshape(PE, fullSize);
+    PE = permute(PE, order);
+end
+
 end
