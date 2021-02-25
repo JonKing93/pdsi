@@ -19,7 +19,7 @@ function[X, Xm, Z, PE] = pdsi(T, P, years, lats, awcs, awcu, calibrationYears, d
 %
 % ----- Inputs -----
 %
-% T: Monthly temperature data (in Farenheit) for a collection of sites. A
+% T: Monthly temperature data (in Celsius) for a collection of sites. A
 %    numeric array that cannot contain NaN, Inf, or complex values. Assumed
 %    to progress from January to December in each included year.
 %
