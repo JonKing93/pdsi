@@ -185,6 +185,10 @@ for m = 1:nMonths
         ro(m,:) = ro_m;
     end
     
+    % If rounding errors result in negative moisture, set it to 0
+    ss(m+1, ss(m+1,:)<0) = 0;
+    su(m+1, su(m+1,:)<0) = 0;
+    
     % Update the waitbar
     if showprogress && (mod(m,step)==0 || m==nMonths)
         percent = 100 * m/nMonths;
