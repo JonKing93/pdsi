@@ -1,5 +1,5 @@
 function[X, Xm, Z, PE] = pdsi(T, P, years, lats, awcs, awcu, calibrationYears, dim, showprogress)
-%% Calculates PDSI
+%% Calculates PDSI and other fields 
 %
 % [X, Xm] = pdsi(T, P, years, lats, awcs, awcu, calibrationYears)
 % Calculates the Palmer Drought Severity Index and modified Palmer Drought
@@ -59,7 +59,7 @@ function[X, Xm, Z, PE] = pdsi(T, P, years, lats, awcs, awcu, calibrationYears, d
 % PE: The computed potential evapotranspiration for each site over time.
 
 % ----- Written By -----
-% Original function by Dave Meko
+% Based on a Matlab function by Dave Meko
 % Updated and vectorized by Jonathan King, 2020
 
 %% Setup

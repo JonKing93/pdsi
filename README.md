@@ -67,3 +67,8 @@ data to disk.
 If you are experiencing slow run times, try running pdsi on chunks of
 data sites. Running on 1000 to 10000 sites at a time could be a good
 starting point.
+
+### Credits
+
+This PDSI function is based on a script written by Dave Meko. It was
+updated by Jonathan King in 2020 to efficiently process multiple sites.
