@@ -30,11 +30,11 @@ time = data.time;
 
 % To run the pdsi function, we must provide
 % 1. Monthly Temperature in Celsius (beginning in January)
-% 2. Monthly precipitation in inches/month (covering the same time period as temperature)
+% 2. Monthly precipitation in mm/month (covering the same time period as temperature)
 % 3. The first and last year of the data
 % 4. The latitudes of the data sites
-% 5. Available water capacity in the surface layer at the sites, and
-% 6. Available water capacity in the underground layer at the sites.
+% 5. Available water capacity in the surface layer (in mm) at the sites, and
+% 6. Available water capacity in the underground layer (in mm) at the sites.
 % 7. The first and last years in which to apply CAFEC normalization.
 % 8. Which dimension is the time dimension (If not the first dimension)
 % 9. (Optional) Request a progress bar for lengthy computations.
@@ -45,7 +45,7 @@ disp(data.temperature_units);
 disp(data.precipitation_units);
 
 T = T - 273.15;   % From Kelvin to Celsius
-P = P * 1.0353E05;   % From mm/second to inches/month
+P = P * 2.592E06;   % From mm/second to mm/month
 
 % We have inputs 1 and 2, so let's work on the others. Looking at the time
 % metadata, we can see the dataset spans the years 1900 to 2005. We decide
@@ -56,10 +56,10 @@ years = [1900 2005];
 cafecYears = [1930 1970];
 lats = repmat(lat, [numel(lon), 1]);
 
-% Reasonable default values for available water capacities are 1 (in the
-% surface layer), and 5 (in the underlying layer). We'll use those here.
-awcs = ones(size(lats));
-awcu = 5 * ones(size(lats));
+% Reasonable default values for available water capacities are 25.4 mm (in the
+% surface layer), and 127 mm (in the underlying layer). We'll use those here.
+awcs = 25.4 * ones(size(lats));
+awcu = 127 * ones(size(lats));
 
 % Our data is longitude x latitude x time. Since time is NOT the first
 % dimension, we should note that time is along the third dimension using
@@ -75,7 +75,7 @@ timeDim = 3;
 % also do:
 [X, Xm, Z, PE] = pdsi(T, P, years, lats, awcs, awcu, cafecYears, timeDim);
 % to also return Z indices (Z) and calculated potential 
-% evapotranspiration (PE) at each site in each month.
+% evapotranspiration (PE, in mm) at each site in each month.
 
 % If the calculations are taking a while, we can use the ninth input to
 % request a progress bar for the calculations.
@@ -99,12 +99,14 @@ lat = data.lat;
 time = data.time;
 nTime = numel(time);
 
-% Conveniently, this data is already in the correct units. Temperature is
-% in Celsius, and precipitation is inches/month.
+% Conveniently, the temperature data is in the correct units. However,
+% we'll need to convert precipitation from inches to mm.
 disp(data.temperature_units);
 disp(data.precipitation_units);
 
-% However, the first month is July (instead of January), and the last month
+P = P * 25.4;
+
+% Now, the first month is July (instead of January), and the last month
 % is June (instead of December). We'll need to remove these points that
 % don't fall within a calendar year.
 remove = [1:6, ...             % July through December of the first (incomplete) year
@@ -120,11 +122,11 @@ years = [1850 2004];
 cafecYears = [1901 1950];
 
 % We decide to use the default soil water capacities again.
-awcs = ones(size(lat));
-awcu = 5 * ones(size(lat));
+awcs = 25.4 * ones(size(lat));
+awcu = 127 * ones(size(lat));
 
 % The time dimension is the first dimension for this dataset, so providing
-% it is optional
+% it is optional.
 timeDim = 1;
 
 % Now we can run the script

@@ -1,13 +1,13 @@
-function[X, Xm, Z, PE] = pdsi(T, P, years, lats, awcs, awcu, calibrationYears, dim, showprogress)
+function[X, Xm, Z, PE] = pdsi(T, P, years, lats, awcs, awcu, cafecYears, dim, showprogress)
 %% Calculates PDSI and other fields 
 %
-% [X, Xm] = pdsi(T, P, years, lats, awcs, awcu, calibrationYears)
+% [X, Xm] = pdsi(T, P, years, lats, awcs, awcu, cafecYears)
 % Calculates the Palmer Drought Severity Index and modified Palmer Drought
 % Severity Index given monthly temperature and precipitation data from a
 % collection of sites.
 %
 % [X, Xm, Z, PE] = pdsi(...)
-% Also return the Z indices and potential evaportranspiration.
+% Also return Z indices and potential evaportranspiration.
 %
 % [...] = pdsi(..., dim)
 % Specify which dimension of the temperature and precipitation data is the
@@ -23,7 +23,7 @@ function[X, Xm, Z, PE] = pdsi(T, P, years, lats, awcs, awcu, calibrationYears, d
 %    numeric array that cannot contain NaN, Inf, or complex values. Assumed
 %    to progress from January to December in each included year.
 %
-% P: Monthly precipitation data (in inches) for a collection of sites. A 
+% P: Monthly precipitation data (in mm/month) for a collection of sites. A 
 %    numeric array that cannot contain NaN, Inf, or complex values. Must 
 %    progress from January to December in each included year. Must have the
 %    same size as the temperature data.
@@ -34,16 +34,16 @@ function[X, Xm, Z, PE] = pdsi(T, P, years, lats, awcs, awcu, calibrationYears, d
 %    as the temperature data, except for the monthly time dimension, which
 %    must have a length of 1.
 %
-% awcs: The available water capacity of the surface layer for each site. A
-%    numeric array. Must have the same size as the temperature data, except
-%    for the monthly time dimension, which must have a length of 1.
+% awcs: The available water capacity of the surface layer for each site
+%    (in mm). A common default value is 25.4 mm. A numeric array. Must have
+%    the same size as lats.
 %
-% awcu: The available water capacity of the underlying layer for each site.
-%    A numeric array. Must have the same size as the temperature data,
-%    except for the monthly time dimension, which must have a length of 1.
+% awcu: The available water capacity of the underlying layer for each 
+%    site (in mm). A common default value is 127 mm. A numeric array. Must
+%    have the same size as lats.
 %
-% calibrationYears: The first and last year of the calibration period. A
-%    two element vector.
+% cafecYears: The first and last year of the calibration period used to 
+%    compute CAFEC normalization. A two element vector.
 %
 % showprogress: A scalar logical indicating whether to display a progress
 %    bar (true) or not (false).
@@ -56,7 +56,8 @@ function[X, Xm, Z, PE] = pdsi(T, P, years, lats, awcs, awcu, calibrationYears, d
 %
 % Z: The Z indices used to calculate PDSI for each site over time.
 %
-% PE: The computed potential evapotranspiration for each site over time.
+% PE: The computed potential evapotranspiration for each site
+%   over time in mm/month.
 
 % ----- Written By -----
 % Based on a Matlab function by Dave Meko
@@ -78,7 +79,7 @@ assert(isscalar(dim), 'dim must be scalar');
 assert(mod(dim,1)==0 & dim>0, 'dim must be a positive integer');
 
 % Error check numeric data type
-args = {T, P, years, lats, awcs, awcu, calibrationYears, dim};
+args = {T, P, years, lats, awcs, awcu, cafecYears, dim};
 names = {'T','P','years','lats','awcs','awcu','calibrationYears','dim'};
 for k = 1:numel(args)
     assert(isnumeric(args{k}) & ~any(isnan(args{k}),'all') & ~any(isinf(args{k}),'all') & all(isreal(args{k}),'all'), ...
@@ -91,7 +92,7 @@ assert( mod(fullSize(dim),12)==0, ['The monthly time dimension (dimension %.f), 
     'must have a length that is divisible by 12 (Each year must have 12 months)']);
 assert(isequal(fullSize, size(P)), 'T and P must have the same size');
 assert(isvector(years) & numel(years)==2, 'years must be a vector with two elements');
-assert(isvector(calibrationYears) & numel(calibrationYears)==2, ...
+assert(isvector(cafecYears) & numel(cafecYears)==2, ...
     'calibrationYears must be a vector with two elements');
 
 % Error check sizes for inputs that require a singleton time dimension
@@ -114,9 +115,9 @@ assert(all(awcu>=0, 'all'), 'awcu cannot have values less than 0');
 
 % Error check year args
 assert(years(2)>=years(1), 'The second element of years cannot be smaller than the first element');
-assert(calibrationYears(2)>=calibrationYears(1), 'The second element of calibrationYears cannot be smaller than the first element');
+assert(cafecYears(2)>=cafecYears(1), 'The second element of calibrationYears cannot be smaller than the first element');
 assert(all(mod(years,1)==0), 'The elements of years must be integers');
-assert(all(mod(calibrationYears,1)==0), 'The elements of calibrationYears must be integers');
+assert(all(mod(cafecYears,1)==0), 'The elements of calibrationYears must be integers');
 
 % Get the years and error check size
 years = (years(1):years(2))';
@@ -125,8 +126,8 @@ assert(fullSize(dim)/12==nYears, sprintf(['The number of listed years (%.f), ',.
     'does not match the number of years in T (%.f)'], nYears, fullSize(dim)/12));
 
 % Get the calibration period and error check
-assert(all(ismember(calibrationYears, years)), 'The calibration years must be within the years of the data');
-calib = years>=calibrationYears(1) & years<=calibrationYears(2);
+assert(all(ismember(cafecYears, years)), 'The calibration years must be within the years of the data');
+calib = years>=cafecYears(1) & years<=cafecYears(2);
 nCalib = sum(calib);
 
 % Permute inputs so that time is along the first dimension
@@ -152,6 +153,11 @@ awcs = reshape(awcs, sizMatrix);
 awcu = reshape(awcu, sizMatrix);
 
 %% Calculations
+
+% Convert mm to inches (for CAFEC and soil moisture calculations)
+P = P * (1/25.4);
+awcs = awcs * (1/25.4);
+awcu = awcu * (1/25.4);
 
 % Separate months from years
 [nTime, nSite] = size(T);
@@ -261,6 +267,9 @@ end
 if nargout > 3
     PE = reshape(PE, fullSize);
     PE = permute(PE, order);
+    
+    % Convert PE from inches back to metric (mm/month)
+    PE = PE * 25.4;
 end
 
 end

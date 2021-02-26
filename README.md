@@ -23,7 +23,7 @@ T: A numeric array holding monthly temperature data at various data sites.
    units of Celsius.
 
 P: Monthly precipitation data. Should correspond same data sites and time
-   steps as the temperature data. Should be in units of inches/month.
+   steps as the temperature data. Should be in units of mm/month.
 
 years: A two element vector indicating the first and last year of the
    temperature data.
@@ -32,11 +32,13 @@ lats: The latitudes of the data sites in degrees. A numeric array. Must be
    the same size as the temperature data, except for the monthly time
    dimension, which should have a length of 1.
 
-awcs: Available water capacity of the surface layer for each site. A
-   numeric array the same size as lats. A common default value is 1.
+awcs: Available water capacity of the surface layer for each site 
+   (in mm). A numeric array the same size as lats. A common default
+    value is 25.4 mm.
 
-awcu: Available water capacity of the underlying layer for each site. A 
-   numeric array the same size as lats. A common default value is 5.
+awcu: Available water capacity of the underlying layer for each site
+   (in mm). A numeric array the same size as lats. A common default
+   value is 127 mm.
 
 cafecYears: A two element vector indicating the first and last years of the
    period to use for CAFEC normalizations.
@@ -56,7 +58,7 @@ Xm: Modified PDSI at each site in each month
 
 Z: Z indices at each site in each month.
 
-PE: Computed potential evapotranspiration at each site in each month.
+PE: Computed potential evapotranspiration at each site in each month (in mm).
 
 ### Tips for slow computations
 
