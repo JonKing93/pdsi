@@ -68,9 +68,9 @@ args = {P, PE, awcs, awcu, ssi, sui};
 names = {'P','PE','awcs','awcu','ssi','sui'};
 for k = 1:numel(args)
     assert(isnumeric(args{k}), sprintf('%s must be numeric', names{k}));
-    assert(~any(isnan(args{k}) | isinf(args{k}) | ~isreal(args{k}), 'all'), ...
+    assert(~any(isnan(args{k}(:)) | isinf(args{k}(:)) | ~isreal(args{k}(:))), ...
         sprintf('%s cannot contain NaN, Inf, or complex values', names{k}));
-    assert(all(args{k}>=0, 'all'), sprintf('%s cannot have negative values', names{k}));
+    assert(all(args{k}(:)>=0), sprintf('%s cannot have negative values', names{k}));
 end
 
 % Error check P and PE. Get sizes
