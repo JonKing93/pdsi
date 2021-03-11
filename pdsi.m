@@ -139,6 +139,7 @@ T = permute(T, order);
 P = permute(P, order);
 awcs = permute(awcs, order);
 awcu = permute(awcu, order);
+lats = permute(lats, order);
 
 % Reshape N-dimensional arrays to matrix form
 fullSize = fullSize(order);
