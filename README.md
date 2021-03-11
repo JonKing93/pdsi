@@ -73,4 +73,5 @@ starting point.
 ### Credits
 
 This PDSI function is based on a script written by Dave Meko. It was
-updated by Jonathan King in 2020 to efficiently process multiple sites.
+updated by Jonathan King in 2020 to include the Southern Hemisphere, and
+to efficiently process multiple sites.
