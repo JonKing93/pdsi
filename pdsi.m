@@ -88,8 +88,8 @@ end
 
 % Error check sizes for data and years
 fullSize = size(T);
-assert( mod(fullSize(dim),12)==0, ['The monthly time dimension (dimension %.f), ',...
-    'must have a length that is divisible by 12 (Each year must have 12 months)']);
+assert( mod(fullSize(dim),12)==0, sprintf(['The monthly time dimension (dimension %.f), ',...
+    'must have a length that is divisible by 12 (Each year must have 12 months)'], dim));
 assert(isequal(fullSize, size(P)), 'T and P must have the same size');
 assert(isvector(years) & numel(years)==2, 'years must be a vector with two elements');
 assert(isvector(cafecYears) & numel(cafecYears)==2, ...
