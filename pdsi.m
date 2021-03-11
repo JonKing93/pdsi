@@ -82,7 +82,7 @@ assert(mod(dim,1)==0 & dim>0, 'dim must be a positive integer');
 args = {T, P, years, lats, awcs, awcu, cafecYears, dim};
 names = {'T','P','years','lats','awcs','awcu','calibrationYears','dim'};
 for k = 1:numel(args)
-    assert(isnumeric(args{k}) & ~any(isnan(args{k}),'all') & ~any(isinf(args{k}),'all') & all(isreal(args{k}),'all'), ...
+    assert(isnumeric(args{k}) & ~any(isnan(args{k}(:))) & ~any(isinf(args{k}(:))) & all(isreal(args{k}(:))), ...
         sprintf('%s must be numeric and cannot contain NaN, Inf, or complex values', names{k}));
 end
 
@@ -108,10 +108,10 @@ for k = 4:6
 end
 
 % Error check bounded quantities
-assert(all(P>=0,'all'), 'P cannot have values less than 0');
-assert(all(lats>=-90 & lats<=90, 'all'), 'Values in lats must be between -90 and 90 (inclusive).');
-assert(all(awcs>=0, 'all'), 'awcs cannot have values less than 0');
-assert(all(awcu>=0, 'all'), 'awcu cannot have values less than 0');
+assert(all(P(:)>=0), 'P cannot have values less than 0');
+assert(all(lats(:)>=-90 & lats<=90), 'Values in lats must be between -90 and 90 (inclusive).');
+assert(all(awcs(:)>=0), 'awcs cannot have values less than 0');
+assert(all(awcu(:)>=0), 'awcu cannot have values less than 0');
 
 % Error check year args
 assert(years(2)>=years(1), 'The second element of years cannot be smaller than the first element');
